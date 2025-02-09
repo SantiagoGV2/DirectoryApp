@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24.0"
+    android:viewportHeight="24.0">
+    <!-- Parte superior de la carpeta (pestaña) -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M3,6h8l2,2h8v2H3z" /> <!-- Pestaña superior -->
+
+    <!-- Base de la carpeta -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M3,10h18v8H3z" /> <!-- Parte inferior rectangular -->
+</vector>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.directoriodigital.ui.home.HomeFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/navigation_qr"
+        android:name="com.example.directoriodigital.ui.qr.QrFragment"
+        android:label="@string/title_qr"
+        tools:layout="@layout/fragment_qr" />
+
+    <fragment
+        android:id="@+id/navigation_folders"
+        android:name="com.example.directoriodigital.ui.folders.FoldersFragment"
+        android:label="@string/title_folders"
+        tools:layout="@layout/fragment_folders" />
+
+    <fragment
+        android:id="@+id/navigation_allfolders"
+        android:name="com.example.directoriodigital.ui.folders.AllFoldersFragment"
+        android:label="@string/title_foldersall"
+        tools:layout="@layout/fragment_allfolders"/>
+
+    <fragment
+        android:id="@+id/navigation_prueba"
+        android:name="com.example.directoriodigital.ui.folders.PruebaFragment"
+        android:label="@string/title_prueba"
+        tools:layout="@layout/fragment_prueba"/>
+
+
+</navigation>

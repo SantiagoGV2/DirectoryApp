@@ -1,0 +1,42 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24.0"
+    android:viewportHeight="24.0">
+    <!-- Esquinas con cuadrados -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M2,2h6v6H2z" /> <!-- Esquina superior izquierda -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3,3h4v4H3z" /> <!-- Interior blanco -->
+
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M16,2h6v6h-6z" /> <!-- Esquina superior derecha -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M17,3h4v4h-4z" /> <!-- Interior blanco -->
+
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M2,16h6v6H2z" /> <!-- Esquina inferior izquierda -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3,17h4v4H3z" /> <!-- Interior blanco -->
+
+    <!-- Patrón del centro -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M10,10h4v1h-4z" /> <!-- Línea superior -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M10,12h1v2h-1z" /> <!-- Línea izquierda -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M13,12h1v2h-1z" /> <!-- Línea derecha -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M10,14h4v1h-4z" /> <!-- Línea inferior -->
+</vector>
+
