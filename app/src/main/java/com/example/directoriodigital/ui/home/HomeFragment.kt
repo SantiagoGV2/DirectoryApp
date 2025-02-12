@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,25 +18,29 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.directoriodigital.databinding.FragmentHomeBinding
-import com.google.android.gms.vision.Frame
 import com.google.android.gms.vision.text.TextRecognizer
 import com.google.gson.annotations.SerializedName
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.POST
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.POST
 import retrofit2.http.Part
 import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 
 class HomeFragment : Fragment() {
 
@@ -44,7 +49,6 @@ class HomeFragment : Fragment() {
 
     private val CAMERA_REQUEST_CODE = 101
     private val REQUEST_CODE_PICK_PDF = 102
-    private var textRecognizer: TextRecognizer? = null
     private var selectedPdfUri: Uri? = null
     private var carpetas: List<Carpeta> = emptyList()  // Añadido para guardar la lista de carpetas
 
@@ -55,7 +59,7 @@ class HomeFragment : Fragment() {
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
-        textRecognizer = TextRecognizer.Builder(requireContext()).build()
+
 
         // Configurar botón de captura de imagen
         binding.btnCaptureImage.setOnClickListener {
@@ -87,37 +91,53 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        textRecognizer?.release()
         _binding = null
     }
+    //cambio
+    private fun processImage(bitmap: Bitmap?, listener: OnTextExtractedListener) {
+        val image: InputImage? = bitmap?.let { InputImage.fromBitmap(it, 0) }
+        val recognizer: com.google.mlkit.vision.text.TextRecognizer =
+            TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-    private fun processImage(bitmap: Bitmap) {
-        val recognizer = textRecognizer
-        if (recognizer != null && recognizer.isOperational) {
-            val frame = Frame.Builder().setBitmap(bitmap).build()
-            val textBlocks = recognizer.detect(frame)
-            val stringBuilder = StringBuilder()
+        if (image != null) {
+            recognizer.process(image)
+                .addOnSuccessListener { text ->
+                    val extractedText: String = text.text
+                    Log.d("OCRProcessor", "Texto extraído: $extractedText")
 
-            for (i in 0 until textBlocks.size()) {
-                val textBlock = textBlocks.valueAt(i)
-                stringBuilder.append(textBlock.value).append("\n")
-            }
-
-            val extractedText = stringBuilder.toString()
-            if (extractedText.isNotEmpty()) {
-                val lines = extractedText.split("\n")
-                binding.etNombre.setText(lines.getOrNull(0) ?: "")
-                binding.etProfesion.setText(lines.getOrNull(1) ?: "")
-                binding.etCorreo.setText(lines.getOrNull(2) ?: "")
-                binding.etTelefono.setText(lines.getOrNull(3) ?: "")
-                binding.etDireccion.setText(lines.getOrNull(4) ?: "")
-            } else {
-                Toast.makeText(requireContext(), "No se detectó texto en la imagen", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(requireContext(), "El reconocimiento de texto no está disponible", Toast.LENGTH_SHORT).show()
+                    // Aplicar RegEx y NLP para extraer información
+                    val contactInfo: ContactInfo = extractContactInfo(extractedText)
+                    listener.onTextExtracted(contactInfo)
+                }
+                .addOnFailureListener { e ->
+                    Log.e("OCRProcessor", "Error al procesar imagen", e)
+                }
         }
     }
+//nuevo
+    private fun extractContactInfo(text: String): ContactInfo {
+    val nameRegex = Regex("\\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*\\b")
+    val professionRegex = Regex("(?i)\\b(Doctor|Ingeniero de software\\.?|Lic\\.?|Prof\\.?|Abog\\.?|Arq\\.?|Enfermero)\\b")
+    val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
+    val phoneRegex = Regex("\\b\\d{7,10}\\b")
+    val addressRegex = Regex("(Calle|Av\\.?|Avenida|Carrera|Cra\\.?)\\s+[A-Za-z0-9\\s]+")
+
+
+    val name = nameRegex.find(text)?.value ?: "No encontrado"
+        val profession = professionRegex.find(text)?.value ?: "No encontrada"
+        val email = emailRegex.find(text)?.value ?: "No encontrado"
+        val phone = phoneRegex.find(text)?.value ?: "No encontrado"
+        val address = addressRegex.find(text)?.value ?: "No encontrada"
+
+
+        return ContactInfo(name,profession,email,phone,address)
+    }
+
+//nuevo
+    interface OnTextExtractedListener {
+        fun onTextExtracted(contactInfo: ContactInfo?)
+    }
+
 
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -139,15 +159,30 @@ class HomeFragment : Fragment() {
     }
 
 
-
+//cambio
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == 100 && resultCode == Activity.RESULT_OK) {
             val bitmap = data?.extras?.get("data") as? Bitmap
+
             bitmap?.let {
-                processImage(it)
-            }
+                processImage(it, object : OnTextExtractedListener {
+                    override fun onTextExtracted(contactInfo: ContactInfo?) {
+                        // Maneja la información extraída, por ejemplo, actualizar la UI
+                        if (contactInfo != null) {
+                            binding.etNombre.setText(contactInfo.name.takeIf { it != "No encontrado" } ?: "")
+                            binding.etProfesion.setText(contactInfo.profession.takeIf { it != "No encontrada" } ?: "")
+                            binding.etCorreo.setText(contactInfo.email.takeIf { it != "No encontrado" } ?: "")
+                            binding.etTelefono.setText(contactInfo.phone.takeIf { it != "No encontrado" } ?: "")
+                            binding.etDireccion.setText(contactInfo.address.takeIf { it != "No encontrada" } ?: "")
+                        } else {
+                            Log.e("HomeFragment", "No se pudo extraer información de la imagen")
+                        }
+                    }
+                })
+            } ?: Log.e("HomeFragment", "Bitmap es null")
         } else if (requestCode == REQUEST_CODE_PICK_PDF && resultCode == Activity.RESULT_OK) {
             selectedPdfUri = data?.data
             selectedPdfUri?.let { uri ->
@@ -159,6 +194,8 @@ class HomeFragment : Fragment() {
             Toast.makeText(requireContext(), "PDF seleccionado: $selectedPdfUri", Toast.LENGTH_SHORT).show()
         }
     }
+
+
 
     private fun previewPdf(uri: Uri) {
         val intent = Intent(Intent.ACTION_VIEW)
@@ -215,7 +252,7 @@ class HomeFragment : Fragment() {
             }
         })
     }
-
+//cambio
     private fun sendDataToServer() {
         val retrofit = Retrofit.Builder()
             .baseUrl("http://192.168.20.41:8080/api/")
@@ -225,12 +262,11 @@ class HomeFragment : Fragment() {
         val service = retrofit.create(ApiService::class.java)
 
         val nombre = RequestBody.create("text/plain".toMediaTypeOrNull(), binding.etNombre.text.toString())
+        val profesion = RequestBody.create("text/plain".toMediaTypeOrNull(), binding.etProfesion.text.toString())
         val email = RequestBody.create("text/plain".toMediaTypeOrNull(), binding.etCorreo.text.toString())
         val direccion = RequestBody.create("text/plain".toMediaTypeOrNull(), binding.etDireccion.text.toString())
-        val profesion = RequestBody.create("text/plain".toMediaTypeOrNull(), binding.etProfesion.text.toString())
         val telefono = RequestBody.create("text/plain".toMediaTypeOrNull(), binding.etTelefono.text.toString())
 
-        // Obtener el ID de la carpeta seleccionada
         val selectedPosition = binding.spinnerCarpetas.selectedItemPosition
         if (selectedPosition < 0 || selectedPosition >= carpetas.size) {
             Toast.makeText(requireContext(), "Por favor selecciona una carpeta", Toast.LENGTH_SHORT).show()
@@ -238,31 +274,31 @@ class HomeFragment : Fragment() {
         }
         val carpetaId = RequestBody.create("text/plain".toMediaTypeOrNull(), carpetas[selectedPosition].id.toString())
 
-        var pdfPart: MultipartBody.Part? = null
-        selectedPdfUri?.let { uri ->
-            val file = getFileFromUri(uri) ?: return@let
-            val requestFile = RequestBody.create("application/pdf".toMediaTypeOrNull(), file)
-            pdfPart = MultipartBody.Part.createFormData("datPdf", file.name, requestFile)
+        val pdfPart: MultipartBody.Part? = selectedPdfUri?.let { uri ->
+            val file = getFileFromUri(uri)
+            file?.let {
+                val requestFile = RequestBody.create("application/pdf".toMediaTypeOrNull(), it)
+                MultipartBody.Part.createFormData("datPdf", it.name, requestFile)
+            }
         }
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = service.agregarDato(nombre, email, direccion, profesion, telefono, carpetaId, pdfPart)
+                val response = service.agregarDato(nombre, profesion,email, direccion, telefono, carpetaId, pdfPart)
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Datos enviados con éxito", Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), "Datos enviados con éxito", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(requireContext(), "Error en el envío", Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), "Error al enviar los datos", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
-
 
     private fun getFileFromUri(uri: Uri): File? {
         val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return null
@@ -288,9 +324,9 @@ data class Carpeta(
         @POST("DatoAG")
         suspend fun agregarDato(
             @Part("datNombre") nombre: RequestBody,
+            @Part("datProfesion") profesion: RequestBody,
             @Part("datEmail") email: RequestBody,
             @Part("datDireccion") direccion: RequestBody,
-            @Part("datProfesion") profesion: RequestBody,
             @Part("datTelefono") telefono: RequestBody,
             @Part("carpetaId") carpetaId: RequestBody,
             @Part pdfFile: MultipartBody.Part?
