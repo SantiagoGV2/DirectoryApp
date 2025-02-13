@@ -10,12 +10,9 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import com.example.directoriodigital.R
 import com.example.directoriodigital.databinding.FragmentFoldersBinding
-import com.example.directoriodigital.ui.home.Carpeta
 import com.google.gson.annotations.SerializedName
-import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -57,13 +54,8 @@ class FoldersFragment : Fragment() {
         val btnCreateFile = root.findViewById<Button>(R.id.btn_create_file)
         btnCreateFile.setOnClickListener {
             saveFolderToDatabase("Carpeta Ejemplo", selectedColor)
-            navigateToNextFragment()
         }
 
-        val nextFragment = root.findViewById<Button>(R.id.btn_change_fragment)
-        nextFragment.setOnClickListener {
-            navigateToNextFragment()
-        }
 
         return root
     }
@@ -116,10 +108,6 @@ class FoldersFragment : Fragment() {
         println("Guardando carpeta: Nombre = $name, Color = $hexColor")
     }
 
-    private fun navigateToNextFragment() {
-        // Navegar al siguiente fragmento
-        findNavController().navigate(R.id.navigation_prueba)
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -129,13 +117,10 @@ class FoldersFragment : Fragment() {
     data class Datos(
         @SerializedName("carNombre") val nombre: String,
         @SerializedName("carColor") val hexcolor: String,
-
     )
 
     interface ApiService {
         @POST("carpetaAG")
         fun sendDatos(@Body datos: Datos): retrofit2.Call<Void>
-        @GET("carpeta")  // Ruta para obtener las carpetas desde el backend
-        fun getCarpetas(): Call<List<Carpeta>>
     }
 }

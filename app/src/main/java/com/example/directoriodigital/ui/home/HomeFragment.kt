@@ -225,7 +225,7 @@ class HomeFragment : Fragment() {
 
                     val adapter = ArrayAdapter(
                         requireContext(),
-                        androidx.appcompat.R.layout.support_simple_spinner_dropdown_item,
+                        androidx.appcompat. R.layout.support_simple_spinner_dropdown_item,
                         nombresCarpetas
                     )
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -315,10 +315,7 @@ data class Carpeta(
     @SerializedName("carId") val id: Int,
     @SerializedName("carNombre") val nombre: String,
     @SerializedName("carColor") val color: String?
-) {
-    val hexcolor: String?
-    get() = color
-}
+)
     interface ApiService {
         @Multipart
         @POST("DatoAG")

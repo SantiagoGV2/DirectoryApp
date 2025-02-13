@@ -23,17 +23,7 @@
         android:label="@string/title_folders"
         tools:layout="@layout/fragment_folders" />
 
-    <fragment
-        android:id="@+id/navigation_allfolders"
-        android:name="com.example.directoriodigital.ui.folders.AllFoldersFragment"
-        android:label="@string/title_foldersall"
-        tools:layout="@layout/fragment_allfolders"/>
 
-    <fragment
-        android:id="@+id/navigation_prueba"
-        android:name="com.example.directoriodigital.ui.folders.PruebaFragment"
-        android:label="@string/title_prueba"
-        tools:layout="@layout/fragment_prueba"/>
 
 
 </navigation>
