@@ -24,16 +24,13 @@ class QrFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val dashboardViewModel =
-            ViewModelProvider(this).get(QrViewModel::class.java)
+
 
         _binding = FragmentQrBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val textView: TextView = binding.textQr
-        dashboardViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
+        binding.textQr
+
 
         binding.btnEscaner
         binding.btnEscaner.setOnClickListener { initScanner() }

@@ -24,4 +24,6 @@
     <color name="indigo">#4B0082</color>
     <color name="primary">#6200EE</color> <!-- Morado intenso -->
     <color name="primaryDark">#3700B3</color> <!-- Morado oscuro -->
+    <color name="primary2">#007AFF</color>  <!-- Azul brillante -->
+    <color name="light_gray">#F5F5F5</color>  <!-- Fondo claro -->
 </resources>
