@@ -95,43 +95,56 @@ class HomeFragment : Fragment() {
     }
     //cambio
     private fun processImage(bitmap: Bitmap?, listener: OnTextExtractedListener) {
-        val image: InputImage? = bitmap?.let { InputImage.fromBitmap(it, 0) }
-        val recognizer: com.google.mlkit.vision.text.TextRecognizer =
-            TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        if (bitmap == null) {
+            Log.e("OCRProcessor", "No se recibió una imagen válida")
+            return
+        }
 
-        if (image != null) {
-            recognizer.process(image)
-                .addOnSuccessListener { text ->
-                    val extractedText: String = text.text
-                    Log.d("OCRProcessor", "Texto extraído: $extractedText")
+        val image = InputImage.fromBitmap(bitmap, 0)
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-                    // Aplicar RegEx y NLP para extraer información
+        recognizer.process(image)
+            .addOnSuccessListener { text ->
+                val extractedText: String = text.text
+                Log.d("OCRProcessor", "Texto extraído: $extractedText")
+
+                if (extractedText.isNotBlank()) {
                     val contactInfo: ContactInfo = extractContactInfo(extractedText)
                     listener.onTextExtracted(contactInfo)
+                } else {
+                    Log.e("OCRProcessor", "No se detectó texto en la imagen")
+                    Toast.makeText(requireContext(), "No se detectó texto en la imagen", Toast.LENGTH_SHORT).show()
                 }
-                .addOnFailureListener { e ->
-                    Log.e("OCRProcessor", "Error al procesar imagen", e)
-                }
-        }
+            }
+            .addOnFailureListener { e ->
+                Log.e("OCRProcessor", "Error al procesar la imagen", e)
+            }
     }
 //nuevo
-    private fun extractContactInfo(text: String): ContactInfo {
-    val nameRegex = Regex("\\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*\\b")
-    val professionRegex = Regex("(?i)\\b(Doctor|Ingeniero de software\\.?|Lic\\.?|Prof\\.?|Abog\\.?|Arq\\.?|Enfermero)\\b")
-    val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
-    val phoneRegex = Regex("\\b\\d{7,10}\\b")
-    val addressRegex = Regex("(Calle|Av\\.?|Avenida|Carrera|Cra\\.?)\\s+[A-Za-z0-9\\s]+")
-
+private fun extractContactInfo(text: String): ContactInfo {
+    val nameRegex = Regex("\\b[A-ZÁÉÍÓÚÑ]+(?:\\s[A-ZÁÉÍÓÚÑ]+)*\\b|\\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*\\b")
+    val professionRegex = Regex("(?i)\\b(Doctor|Dra\\.?|Ingeniero de Software\\.?|Licenciado|Lic\\.?|Profesor|Prof\\.?|Abogado|Abog\\.?|Arquitecto|Arq\\.?|Enfermero|Enfermera)\\b")
+    val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(\\.[a-zA-Z]{2,})?")  // Expresión mejorada
+    val phoneRegex = Regex("\\b(?:\\+\\d{1,3}\\s?)?(?:\\(\\d{2,3}\\)\\s?)?[0-9]{7,10}\\b")
+    val addressRegex = Regex("\\b(Calle|Av\\.?|Avenida|Carrera|Cra\\.?|Pasaje|Plaza|Diagonal|Transversal)\\s+[\\w\\s#\\d-]+\\b")
 
     val name = nameRegex.find(text)?.value ?: "No encontrado"
-        val profession = professionRegex.find(text)?.value ?: "No encontrada"
-        val email = emailRegex.find(text)?.value ?: "No encontrado"
-        val phone = phoneRegex.find(text)?.value ?: "No encontrado"
-        val address = addressRegex.find(text)?.value ?: "No encontrada"
+    val profession = professionRegex.find(text)?.value ?: "No encontrada"
+    // Buscar TODOS los correos en el texto y tomar el primero válido
+    val emailMatches = emailRegex.findAll(text).map { it.value.trim() }.toList()
+    val email = emailMatches.firstOrNull() ?: "No encontrado"
+    val phone = phoneRegex.find(text)?.value ?: "No encontrado"
+    val address = addressRegex.find(text)?.value ?: "No encontrada"
 
+    // Imprimir datos extraídos para depuración
+    Log.d("OCRProcessor", "Nombre: $name")
+    Log.d("OCRProcessor", "Profesión: $profession")
+    Log.d("OCRProcessor", "Correo: $email")
+    Log.d("OCRProcessor", "Teléfono: $phone")
+    Log.d("OCRProcessor", "Dirección: $address")
 
-        return ContactInfo(name,profession,email,phone,address)
-    }
+    return ContactInfo(name, profession, email, phone, address)
+}
 
 //nuevo
     interface OnTextExtractedListener {
@@ -162,40 +175,41 @@ class HomeFragment : Fragment() {
 //cambio
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+    super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == 100 && resultCode == Activity.RESULT_OK) {
-            val bitmap = data?.extras?.get("data") as? Bitmap
+    if (requestCode == 100 && resultCode == Activity.RESULT_OK) {
+        val bitmap = data?.extras?.get("data") as? Bitmap
 
-            bitmap?.let {
-                processImage(it, object : OnTextExtractedListener {
-                    override fun onTextExtracted(contactInfo: ContactInfo?) {
-                        // Maneja la información extraída, por ejemplo, actualizar la UI
-                        if (contactInfo != null) {
-                            binding.etNombre.setText(contactInfo.name.takeIf { it != "No encontrado" } ?: "")
-                            binding.etProfesion.setText(contactInfo.profession.takeIf { it != "No encontrada" } ?: "")
-                            binding.etCorreo.setText(contactInfo.email.takeIf { it != "No encontrado" } ?: "")
-                            binding.etTelefono.setText(contactInfo.phone.takeIf { it != "No encontrado" } ?: "")
-                            binding.etDireccion.setText(contactInfo.address.takeIf { it != "No encontrada" } ?: "")
-                        } else {
-                            Log.e("HomeFragment", "No se pudo extraer información de la imagen")
-                        }
-                    }
-                })
-            } ?: Log.e("HomeFragment", "Bitmap es null")
-        } else if (requestCode == REQUEST_CODE_PICK_PDF && resultCode == Activity.RESULT_OK) {
-            selectedPdfUri = data?.data
-            selectedPdfUri?.let { uri ->
-                val pdfName = uri.lastPathSegment ?: "Archivo PDF"
-                binding.tvPdfName.text = "Archivo seleccionado: $pdfName"
-            } ?: run {
-                binding.tvPdfName.text = "Error al seleccionar el archivo"
-            }
-            Toast.makeText(requireContext(), "PDF seleccionado: $selectedPdfUri", Toast.LENGTH_SHORT).show()
+        if (bitmap == null) {
+            Log.e("HomeFragment", "No se recibió imagen desde la cámara")
+            Toast.makeText(requireContext(), "Error al capturar imagen", Toast.LENGTH_SHORT).show()
+            return
         }
+
+        processImage(bitmap, object : OnTextExtractedListener {
+            override fun onTextExtracted(contactInfo: ContactInfo?) {
+                if (contactInfo != null) {
+                    binding.etNombre.setText(contactInfo.name.takeIf { it != "No encontrado" } ?: "")
+                    binding.etProfesion.setText(contactInfo.profession.takeIf { it != "No encontrada" } ?: "")
+                    binding.etCorreo.setText(contactInfo.email.takeIf { it != "No encontrado" } ?: "")
+                    binding.etTelefono.setText(contactInfo.phone.takeIf { it != "No encontrado" } ?: "")
+                    binding.etDireccion.setText(contactInfo.address.takeIf { it != "No encontrada" } ?: "")
+                } else {
+                    Log.e("HomeFragment", "No se pudo extraer información de la imagen")
+                }
+            }
+        })
+    } else if (requestCode == REQUEST_CODE_PICK_PDF && resultCode == Activity.RESULT_OK) {
+        selectedPdfUri = data?.data
+        selectedPdfUri?.let { uri ->
+            val pdfName = uri.lastPathSegment ?: "Archivo PDF"
+            binding.tvPdfName.text = "Archivo seleccionado: $pdfName"
+        } ?: run {
+            binding.tvPdfName.text = "Error al seleccionar el archivo"
+        }
+        Toast.makeText(requireContext(), "PDF seleccionado: $selectedPdfUri", Toast.LENGTH_SHORT).show()
     }
-
-
+}
 
     private fun previewPdf(uri: Uri) {
         val intent = Intent(Intent.ACTION_VIEW)

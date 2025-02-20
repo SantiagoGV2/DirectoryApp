@@ -66,6 +66,8 @@ dependencies {
     implementation ("com.google.android.gms:play-services-vision:20.1.3")
     implementation ("com.squareup.okhttp3:okhttp:4.9.3")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
+    implementation ("com.google.mlkit:text-recognition:16.0.0")
+
 
 
 
