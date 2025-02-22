@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    android:background="@color/white"
+    android:background="@drawable/backgroud_gradient"
     tools:context=".ui.folders.FoldersFragment">
 
     <!-- Título -->
@@ -53,7 +53,7 @@
             android:layout_height="48dp"
             android:text="Crear"
             android:textColor="@color/white"
-            android:background="@drawable/button_backgroud"
+            android:backgroundTint="@color/primary2"
             android:paddingHorizontal="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -113,7 +113,7 @@
                         android:text="Cambiar color"
                         android:layout_gravity="center"
                         android:layout_marginTop="8dp"
-                        android:background="@drawable/button_backgroud"
+                        android:backgroundTint="@color/primary2"
                         android:textColor="@color/white"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

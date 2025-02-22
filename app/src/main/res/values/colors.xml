@@ -6,7 +6,7 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="maroon">#800000</color>
-    <color name="blue">#0000FF</color>
+    <color name="blue">#1976D2</color>
     <color name="olive">#808000</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
@@ -26,4 +26,9 @@
     <color name="primaryDark">#3700B3</color> <!-- Morado oscuro -->
     <color name="primary2">#007AFF</color>  <!-- Azul brillante -->
     <color name="light_gray">#F5F5F5</color>  <!-- Fondo claro -->
+    <color name="primaryBlue">#0077B6</color>  <!-- Azul principal -->
+    <color name="darkBlue">#023E8A</color>  <!-- Azul oscuro -->
+    <color name="lightGray">#F5F5F5</color>  <!-- Fondo claro -->
+    <color name="navItemSelected">#0096C7</color>  <!-- Azul más claro para el seleccionado -->
+    <color name="navItemUnselected">#8E8E93</color>  <!-- Gris para ítems no seleccionados -->
 </resources>

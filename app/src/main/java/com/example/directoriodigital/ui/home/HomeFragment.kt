@@ -239,7 +239,7 @@ private fun extractContactInfo(text: String): ContactInfo {
 
                     val adapter = ArrayAdapter(
                         requireContext(),
-                        androidx.appcompat. R.layout.support_simple_spinner_dropdown_item,
+                        androidx.appcompat.R.layout.support_simple_spinner_dropdown_item,
                         nombresCarpetas
                     )
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
