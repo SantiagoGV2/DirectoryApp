@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Directorio Digital</string>
+    <string name="app_name">TaskGo</string>
     <string name="title_home">Home</string>
     <string name="title_qr">QR</string>
     <string name="title_folders">Archivos</string>
