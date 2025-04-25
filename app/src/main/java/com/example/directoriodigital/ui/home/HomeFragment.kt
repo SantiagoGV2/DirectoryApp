@@ -122,26 +122,61 @@ class HomeFragment : Fragment() {
     }
 //nuevo
 private fun extractContactInfo(text: String): ContactInfo {
+    // 1. Expresión para nombres (la original que tenías funcionaba mejor)
     val nameRegex = Regex("\\b[A-ZÁÉÍÓÚÑ]+(?:\\s[A-ZÁÉÍÓÚÑ]+)*\\b|\\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*\\b")
-    val professionRegex = Regex("(?i)\\b(Doctor|Dra\\.?|Ingeniero de Software\\.?|Licenciado|Lic\\.?|Profesor|Prof\\.?|Abogado|Abog\\.?|Arquitecto|Arq\\.?|Enfermero|Enfermera)\\b")
-    val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(\\.[a-zA-Z]{2,})?")  // Expresión mejorada
-    val phoneRegex = Regex("\\b(?:\\+\\d{1,3}\\s?)?(?:\\(\\d{2,3}\\)\\s?)?[0-9]{7,10}\\b")
+
+    // 2. Expresión mejorada para profesiones (más flexible)
+    val professionRegex = Regex("""(?i)(Ingeniero(a)?(\s+de\s+Software)?|Administraci[óo]n\s+de\s+Empresas|Finanzas\s+y\s+Comercio\s+Exterior|Marketing\s+y\s+Log[íi]stica)""")
+
+    // 3. Expresión específica para correos uniempresarial
+    val emailRegex = Regex("""(\b[\w.%+-]+@[\w.-]+\.[a-zA-Z]{2,}\b|\b[\w.%+-]+@uniempresarial\.edu\.co\b)""")
+    // Expresión general para otros correos
+    val generalEmailRegex = Regex("\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\\b")
+
+    // 4. Expresión para teléfonos
+    val phoneRegex = Regex("\\b(?:\\+?\\d{1,3}\\s?)?(?:\\(\\d{2,3}\\)\\s?)?[\\d\\s-]{7,}\\b")
+
+    // 5. Expresión para direcciones
     val addressRegex = Regex("\\b(Calle|Av\\.?|Avenida|Carrera|Cra\\.?|Pasaje|Plaza|Diagonal|Transversal)\\s+[\\w\\s#\\d-]+\\b")
 
-    val name = nameRegex.find(text)?.value ?: "No encontrado"
-    val profession = professionRegex.find(text)?.value ?: "No encontrada"
-    // Buscar TODOS los correos en el texto y tomar el primero válido
-    val emailMatches = emailRegex.findAll(text).map { it.value.trim() }.toList()
-    val email = emailMatches.firstOrNull() ?: "No encontrado"
-    val phone = phoneRegex.find(text)?.value ?: "No encontrado"
-    val address = addressRegex.find(text)?.value ?: "No encontrada"
+    // Procesamiento mejorado
+    val cleanText = text.replace("\n", " ").replace(Regex("\\s{2,}"), " ")
 
-    // Imprimir datos extraídos para depuración
-    Log.d("OCRProcessor", "Nombre: $name")
-    Log.d("OCRProcessor", "Profesión: $profession")
-    Log.d("OCRProcessor", "Correo: $email")
-    Log.d("OCRProcessor", "Teléfono: $phone")
-    Log.d("OCRProcessor", "Dirección: $address")
+    // Extracción de nombre (conservando tu versión original)
+    val nameMatches = nameRegex.findAll(cleanText).map { it.value }.toList()
+    val name = when {
+        nameMatches.size >= 2 -> "${nameMatches[0]} ${nameMatches[1]}" // Nombre + Apellido
+        nameMatches.isNotEmpty() -> nameMatches[0]
+        else -> "No encontrado"
+    }
+
+    // Extracción de profesión (buscando la coincidencia más larga)
+    val professionMatches = professionRegex.findAll(cleanText).map { it.value }.toList()
+    val profession = if (professionMatches.isNotEmpty()) {
+        professionMatches.maxByOrNull { it.length } ?: "No encontrada"
+    } else {
+        "No encontrada"
+    }
+
+    // Extracción de emails (priorizando uniempresarial)
+    val uniEmails = emailRegex.findAll(cleanText).map { it.value }.toList()
+    val generalEmails = generalEmailRegex.findAll(cleanText).map { it.value }.toList()
+    val email = when {
+        uniEmails.isNotEmpty() -> uniEmails.first() // Priorizar correos institucionales
+        generalEmails.isNotEmpty() -> generalEmails.first()
+        else -> "No encontrado"
+    }
+
+    // Extracción de teléfono y dirección
+    val phone = phoneRegex.find(cleanText)?.value ?: "No encontrado"
+    val address = addressRegex.find(cleanText)?.value ?: "No encontrada"
+
+    // Depuración detallada
+    Log.d("OCR_Debug", "Texto limpio: $cleanText")
+    Log.d("OCR_Debug", "Nombres encontrados: $nameMatches")
+    Log.d("OCR_Debug", "Profesiones encontradas: $professionMatches")
+    Log.d("OCR_Debug", "Correos uniempresarial: $uniEmails")
+    Log.d("OCR_Debug", "Correos generales: $generalEmails")
 
     return ContactInfo(name, profession, email, phone, address)
 }
