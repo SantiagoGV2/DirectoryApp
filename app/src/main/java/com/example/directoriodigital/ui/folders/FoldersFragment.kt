@@ -1,23 +1,16 @@
 package com.example.directoriodigital.ui.folders
 
-import android.app.AlertDialog
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.example.directoriodigital.R
 import com.example.directoriodigital.databinding.FragmentFoldersBinding
-import com.google.gson.annotations.SerializedName
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.fragment.app.viewModels
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.widget.EditText
+import com.example.directoriodigital.databinding.DialogCreateFolderBinding
 
 
 class FoldersFragment : Fragment() {
@@ -25,8 +18,9 @@ class FoldersFragment : Fragment() {
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
 
-    // Color predeterminado para la carpeta
-    private var selectedColor: Int = Color.WHITE
+    // Inicializamos el ViewModel
+    private val viewModel: FoldersViewModel by viewModels()
+    private lateinit var folderAdapter: FolderAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,93 +28,77 @@ class FoldersFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentFoldersBinding.inflate(inflater, container, false)
-        val root: View = binding.root
+        return binding.root
+    }
 
-        val textView: TextView = binding.textFolders
-        textView.text = "Gestiona tus carpetas"
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        // Botón para cambiar color
-        val btnChangeColor = root.findViewById<Button>(R.id.btn_change_color)
-        val cardExample = root.findViewById<View>(R.id.card_example)
+        // 1. Inicializa el adapter
+        folderAdapter = FolderAdapter()
 
-        btnChangeColor.setOnClickListener {
-            openNativeColorPicker { color ->
-                selectedColor = color
-                cardExample.setBackgroundColor(color)
+        // 2. Configura el RecyclerView
+        binding.recyclerViewFolders.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = folderAdapter
+        }
+
+        // Observa los cambios en la lista de carpetas desde el ViewModel
+        viewModel.folders.observe(viewLifecycleOwner) { folders ->
+            // El método submitList es del ListAdapter y maneja todo automáticamente
+            folderAdapter.submitList(folders)
+        }
+
+        // Configura el clic del botón flotante
+        binding.fabAddFolder.setOnClickListener {
+            showCreateFolderDialog()
+        }
+    }
+
+    private fun showCreateFolderDialog() {
+        val dialogBinding = DialogCreateFolderBinding.inflate(LayoutInflater.from(requireContext()))
+
+        // Lista de colores y los contenedores correspondientes
+        val colorContainers = listOf(
+            dialogBinding.colorBlueContainer,
+            dialogBinding.colorGreenContainer,
+            dialogBinding.colorYellowContainer,
+            dialogBinding.colorRedContainer,
+            dialogBinding.colorPurpleContainer
+        )
+        val colorHexValues = listOf("#2979FF", "#4CAF50", "#FFC107", "#F44336", "#9C27B0")
+
+        var selectedColorHex = colorHexValues[0]
+        var selectedContainer: View = dialogBinding.colorBlueContainer
+        selectedContainer.isSelected = true
+
+        // Asignar un listener a cada contenedor de color
+        colorContainers.forEachIndexed { index, container ->
+            container.setOnClickListener {
+                // Quitar la selección del contenedor anterior
+                selectedContainer.isSelected = false
+
+                // Actualizar el nuevo contenedor y color seleccionados
+                selectedContainer = it
+                selectedContainer.isSelected = true
+                selectedColorHex = colorHexValues[index]
             }
         }
 
-        // Botón para guardar carpeta y redirigir
-        val btnCreateFile = root.findViewById<Button>(R.id.btn_create_file)
-        btnCreateFile.setOnClickListener {
-            saveFolderToDatabase("Carpeta Ejemplo", selectedColor)
-        }
-
-
-        return root
-    }
-
-    private fun openNativeColorPicker(onColorSelected: (Int) -> Unit) {
-        val colors = arrayOf("#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF")
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Selecciona un color")
-        builder.setItems(colors) { _, which ->
-            onColorSelected(Color.parseColor(colors[which]))
-        }
-        builder.create().show()
-    }
-
-
-    private fun saveFolderToDatabase(name: String, color: Int) {
-        val nombre = binding.editFolderName.text.toString()
-        if (nombre.isBlank()) {
-            Toast.makeText(requireContext(), "El nombre de la carpeta no puede estar vacío", Toast.LENGTH_SHORT).show()
-            return
-        }
-        // Convertir el color a hexadecimal
-        val hexColor = String.format("#%06X", 0xFFFFFF and color)
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl("http://192.168.20.41:8080/api/") // Cambia la IP y puerto de tu backend
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        val service = retrofit.create(ApiService::class.java)
-
-        val datos = Datos(nombre, hexColor)
-
-        service.sendDatos(datos).enqueue(object : retrofit2.Callback<Void> {
-            override fun onResponse(call: retrofit2.Call<Void>, response: retrofit2.Response<Void>) {
-                if (response.isSuccessful) {
-                    Toast.makeText(requireContext(), "Datos enviados con éxito", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(requireContext(), "Error al enviar los datos", Toast.LENGTH_SHORT).show()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Nueva Carpeta")
+            .setView(dialogBinding.root)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Crear") { _, _ ->
+                val name = dialogBinding.etFolderName.text.toString()
+                if (name.isNotBlank()) {
+                    viewModel.createFolder(name, selectedColorHex)
                 }
             }
-
-            override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
-                Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
-
-        // Aquí iría la lógica para guardar los datos en la base de datos.
-        // Por ejemplo, una llamada a un ViewModel o Repositorio.
-        println("Guardando carpeta: Nombre = $name, Color = $hexColor")
+            .show()
     }
-
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    data class Datos(
-        @SerializedName("carNombre") val nombre: String,
-        @SerializedName("carColor") val hexcolor: String,
-    )
-
-    interface ApiService {
-        @POST("carpetaAG")
-        fun sendDatos(@Body datos: Datos): retrofit2.Call<Void>
     }
 }

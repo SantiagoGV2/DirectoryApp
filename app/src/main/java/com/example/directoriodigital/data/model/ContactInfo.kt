@@ -1,4 +1,4 @@
-package com.example.directoriodigital.ui.home
+package com.example.directoriodigital.data.model
 
 data class ContactInfo(
     var name: String? = null,

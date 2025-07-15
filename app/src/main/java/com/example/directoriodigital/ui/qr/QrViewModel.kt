@@ -5,9 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class QrViewModel : ViewModel() {
+    // LiveData para comunicar el resultado del escaneo a la UI
+    private val _scannedResult = MutableLiveData<String>()
+    val scannedResult: LiveData<String> = _scannedResult
 
-    private val _text = MutableLiveData<String>().apply {
-        value = ""
+    fun onScanResult(content: String?) {
+        _scannedResult.value = content ?: "Escaneo cancelado"
     }
-    val text: LiveData<String> = _text
 }

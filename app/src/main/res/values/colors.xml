@@ -12,6 +12,10 @@
     <color name="black">#000000</color>
 
     <!-- Colores adicionales -->
+    <color name="taskgo_blue_primary">#2979FF</color>
+    <color name="taskgo_dark_background">#1A233A</color>
+    <color name="taskgo_light_accent">#DDE2E5</color>
+    <color name="light_background">#F8F9FA</color>
     <color name="gray_light">#F5F5F5</color>
     <color name="gray_dark">#333333</color>
     <color name="blue_light">#87CEEB</color>
